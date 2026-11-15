@@ -1,92 +1,141 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LaunchLens — token launch radar</title>
-<link rel="stylesheet" href="app.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LaunchLens v3 — Comps-Calibrated Token Launch Radar</title>
+  <link rel="stylesheet" href="app.css">
 </head>
 <body>
   <header class="top">
     <div class="brand">
-      <span class="logo" aria-hidden="true"></span>
+      <div class="logo" aria-hidden="true"><span>LL</span></div>
       <div>
-        <h1>LaunchLens</h1>
-        <p class="tag">A token launch radar — pre-token DeFi protocols, ranked by an implied value learned from the market itself.</p>
+        <div class="title-row">
+          <h1>LaunchLens</h1>
+          <span class="ver-badge" id="ver-badge">v3 · Shrunk Comps × Power-Law</span>
+        </div>
+        <p class="tag">Pre-token DeFi protocols priced off the snapshot's own deduplicated live-token families, via Empirical-Bayes sector shrinkage, a log-log size power law, and mechanism-aware costed farm playbooks — validated out-of-sample.</p>
       </div>
     </div>
-    <dl class="stats">
-      <div><dt>Protocols scanned</dt><dd id="s-total">—</dd></div>
-      <div><dt>On watchlist</dt><dd id="s-watch">—</dd></div>
-      <div><dt>Ranked on board</dt><dd id="s-board">—</dd></div>
-      <div><dt>Snapshot</dt><dd id="s-asof">—</dd></div>
+    <dl class="stats" aria-label="Snapshot telemetry">
+      <div class="stat-card"><dt>Universe audited</dt><dd id="s-total">—</dd><span id="s-live-sub" class="stat-sub">live families</span></div>
+      <div class="stat-card"><dt>Watchlist coverage</dt><dd id="s-watch">—</dd><span class="stat-sub good-txt">100% ranked</span></div>
+      <div class="stat-card"><dt>Ranked pre-token</dt><dd id="s-board">—</dd><span id="s-cap-sub" class="stat-sub">implied cap</span></div>
+      <div class="stat-card"><dt>LOO-CV within 2×</dt><dd id="s-bt">—</dd><span id="s-bt-sub" class="stat-sub">backtest</span></div>
+      <div class="stat-card"><dt>Power-law slope β</dt><dd id="s-beta">—</dd><span id="s-glob-sub" class="stat-sub">global med</span></div>
+      <div class="stat-card"><dt>Sealed snapshot</dt><dd id="s-asof">—</dd><span class="stat-sub">DefiLlama</span></div>
     </dl>
   </header>
 
-  <!--
-    Methodology (for the reader, and legible in source). Every number below is derived from the sealed
-    snapshot's own figures; no protocol is ever special-cased by name.
-
-      implied_value(p) = p.tvl_usd
-                       × sectorMultiple(p)   // median (market cap / TVL) of LIVE-token protocols in p's
-                                             //   category, learned from the snapshot itself; falls back
-                                             //   to the global median when a category has < 3 comparables.
-                                             //   Clamped to 0.05×..2.0× so one outlier cannot dominate.
-                       × momentum(p)         // 1 + clamp(change_7d, -50%, +150%)/100 × 0.6
-                       × timing(p)           // 0.80..1.35, rising with days listed and still no token
-                       × conviction(p)       // 0.70..1.00, higher for larger TVL, a known age, a deep sector
-
-    The board separates pre-token protocols (ranked by implied value) from live-token ones (shown at the
-    market's own value, in the Sector multiples panel, never mixed into the ranking). The watchlist is a
-    floor, not a ceiling: the board also ranks the largest pre-token protocols below the floor — the early
-    finds the radar exists to surface. See learnSectors() and value() in the model behind data.js.
-  -->
-  <section class="model" aria-label="How the value is computed">
-    <h2>How implied value is computed</h2>
-    <p class="formula">
-      <b>implied value</b> = TVL
-      <span class="x">×</span> <span class="chip">sector multiple</span>
-      <span class="x">×</span> <span class="chip">7-day momentum</span>
-      <span class="x">×</span> <span class="chip">token timing</span>
-      <span class="x">×</span> <span class="chip">conviction</span>
-    </p>
-    <p id="model-note" class="note">The sector multiple is <b>learned from this snapshot's own live-token protocols</b> — the median market-cap ÷ TVL for each category — so a pre-token protocol is valued at what the market already pays for a dollar of TVL in its sector, not a hardcoded guess. Momentum rewards 7-day TVL growth, timing rewards protocols that have run longer with no token, and conviction scales with size and data depth. No protocol is special-cased by name.</p>
+  <section class="model" aria-label="How implied value is calibrated">
+    <div class="model-top">
+      <div>
+        <h2>Two-anchor empirical calibration &amp; LOO-CV backtest</h2>
+        <p class="formula">
+          <b>implied value</b> = TVL
+          <span class="x">×</span> <span class="chip chip-primary">shrunk sector<sup>0.65</sup> ⊕ size power-law<sup>0.35</sup></span>
+          <span class="x">×</span> <span class="chip">7d momentum</span>
+          <span class="x">×</span> <span class="chip">token timing</span>
+          <span class="x">×</span> <span class="chip">conviction</span>
+        </p>
+      </div>
+      <div id="bt-badges" class="bt-badges"></div>
+    </div>
+    <p id="model-note" class="note">The sector multiple is the per-category median market-cap ÷ TVL of this snapshot's own live-token families, Empirical-Bayes shrunk toward the global median so thin categories borrow strength from the whole market; it is geometrically blended 65/35 with a log-log power-law size curve (bigger protocols carry lower multiples). Every number is derived from the data — no protocol is special-cased. See learnSectorsFromFamilies(), fitPowerLaw() and runBacktest().</p>
     <details class="sectors" open>
-      <summary>Sector multiples, learned from this snapshot's live-token protocols</summary>
+      <summary>Empirical-Bayes shrunk sector multiples &amp; P25–P75 bands — click a sector to filter the board</summary>
       <div id="sector-table" class="sector-grid"></div>
     </details>
   </section>
 
-  <section class="controls" aria-label="Filter and sort the board">
-    <input id="q" type="search" placeholder="Search a protocol or chain…" aria-label="Search">
+  <nav class="view-tabs" aria-label="Workspace views">
+    <button type="button" class="tab-btn active" data-tab="board">Ranked pre-token board <span id="tab-c-board" class="tab-pill"></span></button>
+    <button type="button" class="tab-btn" data-tab="comps">Live comparables &amp; backtest <span id="tab-c-comps" class="tab-pill"></span></button>
+    <button type="button" class="tab-btn" data-tab="audit">Eligibility &amp; set-aside audit <span id="tab-c-audit" class="tab-pill"></span></button>
+    <div class="tab-spacer"></div>
+    <button type="button" id="btn-export" class="action-btn" title="Download the current filtered board as CSV">Export CSV</button>
+  </nav>
+
+  <section id="controls-bar" class="controls" aria-label="Filter and sort the board">
+    <input id="q" type="search" placeholder="Search protocol, slug, category, or chain…" aria-label="Search">
     <select id="cat" aria-label="Category"></select>
+    <select id="chain" aria-label="Chain"></select>
     <select id="air" aria-label="Airdrop likelihood">
       <option value="">Any airdrop odds</option>
       <option value="High">Airdrop: High</option>
       <option value="Medium">Airdrop: Medium</option>
       <option value="Low">Airdrop: Low</option>
     </select>
+    <select id="verdict" aria-label="Farm verdict">
+      <option value="">Any farm verdict</option>
+      <option value="Priority Farm">Verdict: Priority Farm</option>
+      <option value="Active Farm">Verdict: Active Farm</option>
+      <option value="Selective">Verdict: Selective</option>
+      <option value="Monitor">Verdict: Monitor</option>
+    </select>
     <label class="toggle"><input id="watchonly" type="checkbox"> Watchlist only</label>
     <select id="sort" aria-label="Sort by">
       <option value="rank">Sort: implied value</option>
       <option value="tvl">Sort: TVL</option>
       <option value="growth">Sort: 7-day growth</option>
-      <option value="age">Sort: age with no token</option>
+      <option value="age">Sort: age (no token)</option>
+      <option value="mult">Sort: effective multiple</option>
     </select>
+    <button type="button" id="btn-reset" class="reset-btn">Reset</button>
     <span id="count" class="count"></span>
   </section>
 
   <main class="layout">
-    <div class="board-wrap">
-      <table class="board" aria-label="Ranked board of pre-token protocols">
-        <thead>
-          <tr><th>#</th><th>Protocol</th><th>Category</th><th class="num">Implied value</th><th class="num">TVL</th><th class="num">7d</th><th>Airdrop</th></tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
+    <div class="main-col">
+      <div id="view-board" class="view-pane">
+        <div class="board-wrap">
+          <table class="board" aria-label="Ranked board of pre-token protocols">
+            <thead>
+              <tr>
+                <th>#</th><th>Protocol &amp; chains</th><th>Category</th>
+                <th class="num">Implied value (P25–P75)</th><th class="num">TVL / mult</th>
+                <th class="num">7d</th><th>Odds &amp; verdict</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-comps" class="view-pane hidden">
+        <div id="bt-summary" class="audit-cards"></div>
+        <div class="board-wrap">
+          <table class="board" aria-label="Live token comparable families">
+            <thead>
+              <tr>
+                <th>Live token family</th><th>Category</th><th>Chains</th>
+                <th class="num">TVL</th><th class="num">Actual mcap</th>
+                <th class="num">Mcap/TVL</th><th class="num">Model pred</th>
+              </tr>
+            </thead>
+            <tbody id="live-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-audit" class="view-pane hidden">
+        <div id="audit-summary" class="audit-cards"></div>
+        <div class="board-wrap">
+          <table class="board" aria-label="Set-aside excluded protocols">
+            <thead>
+              <tr><th>Excluded protocol</th><th>Slug</th><th>Category</th><th class="num">Reported TVL</th><th>Set-aside reason</th></tr>
+            </thead>
+            <tbody id="audit-rows"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
+
     <aside id="detail" class="detail" aria-live="polite"></aside>
   </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <footer class="foot">
     <span>LaunchLens reads a sealed DefiLlama snapshot and estimates what a token <i>would</i> be worth if the record stayed as it is — not whether or when one is issued. A protocol here records no token; that is not proof it has none.</span>
