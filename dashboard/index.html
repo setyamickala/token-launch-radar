@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LaunchLens — token launch radar</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>LaunchLens</h1>
+        <p class="tag">A token launch radar — pre-token DeFi protocols, ranked by an implied value learned from the market itself.</p>
+      </div>
+    </div>
+    <dl class="stats">
+      <div><dt>Protocols scanned</dt><dd id="s-total">—</dd></div>
+      <div><dt>On watchlist</dt><dd id="s-watch">—</dd></div>
+      <div><dt>Ranked on board</dt><dd id="s-board">—</dd></div>
+      <div><dt>Snapshot</dt><dd id="s-asof">—</dd></div>
+    </dl>
+  </header>
+
+  <section class="model" aria-label="How the value is computed">
+    <h2>How implied value is computed</h2>
+    <p class="formula">
+      <b>implied value</b> = TVL
+      <span class="x">×</span> <span class="chip">sector multiple</span>
+      <span class="x">×</span> <span class="chip">7-day momentum</span>
+      <span class="x">×</span> <span class="chip">token timing</span>
+      <span class="x">×</span> <span class="chip">conviction</span>
+    </p>
+    <p id="model-note" class="note"></p>
+    <details class="sectors">
+      <summary>Sector multiples, learned from this snapshot's live-token protocols</summary>
+      <div id="sector-table" class="sector-grid"></div>
+    </details>
+  </section>
+
+  <section class="controls" aria-label="Filter and sort the board">
+    <input id="q" type="search" placeholder="Search a protocol or chain…" aria-label="Search">
+    <select id="cat" aria-label="Category"></select>
+    <select id="air" aria-label="Airdrop likelihood">
+      <option value="">Any airdrop odds</option>
+      <option value="High">Airdrop: High</option>
+      <option value="Medium">Airdrop: Medium</option>
+      <option value="Low">Airdrop: Low</option>
+    </select>
+    <label class="toggle"><input id="watchonly" type="checkbox"> Watchlist only</label>
+    <select id="sort" aria-label="Sort by">
+      <option value="rank">Sort: implied value</option>
+      <option value="tvl">Sort: TVL</option>
+      <option value="growth">Sort: 7-day growth</option>
+      <option value="age">Sort: age with no token</option>
+    </select>
+    <span id="count" class="count"></span>
+  </section>
+
+  <main class="layout">
+    <div class="board-wrap">
+      <table class="board" aria-label="Ranked board of pre-token protocols">
+        <thead>
+          <tr><th>#</th><th>Protocol</th><th>Category</th><th class="num">Implied value</th><th class="num">TVL</th><th class="num">7d</th><th>Airdrop</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <aside id="detail" class="detail" aria-live="polite"></aside>
+  </main>
+
+  <footer class="foot">
+    <span>LaunchLens reads a sealed DefiLlama snapshot and estimates what a token <i>would</i> be worth if the record stayed as it is — not whether or when one is issued. A protocol here records no token; that is not proof it has none.</span>
+    <span id="src" class="src"></span>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
