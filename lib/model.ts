@@ -425,7 +425,7 @@ export function buildRadar(snapshot: Snapshot): { board: BoardRow[]; radar: Rada
   const early = board.filter((r) => !r.on_watchlist).length;
   const sectorList = Object.entries(sectors.byCategory)
     .filter(([, v]) => v.comparables >= MODEL.sector_min_comparables)
-    .map(([category, v]) => ({ category, multiple: v.multiple, comparables: v.comparables }))
+    .map(([category, v]) => ({ category, multiple: Math.round(v.multiple * 100) / 100, comparables: v.comparables }))
     .sort((a, b) => b.comparables - a.comparables);
   const radar: RadarData = {
     as_of: snapshot.as_of,

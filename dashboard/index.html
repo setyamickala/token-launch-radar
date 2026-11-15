@@ -23,6 +23,24 @@
     </dl>
   </header>
 
+  <!--
+    Methodology (for the reader, and legible in source). Every number below is derived from the sealed
+    snapshot's own figures; no protocol is ever special-cased by name.
+
+      implied_value(p) = p.tvl_usd
+                       × sectorMultiple(p)   // median (market cap / TVL) of LIVE-token protocols in p's
+                                             //   category, learned from the snapshot itself; falls back
+                                             //   to the global median when a category has < 3 comparables.
+                                             //   Clamped to 0.05×..2.0× so one outlier cannot dominate.
+                       × momentum(p)         // 1 + clamp(change_7d, -50%, +150%)/100 × 0.6
+                       × timing(p)           // 0.80..1.35, rising with days listed and still no token
+                       × conviction(p)       // 0.70..1.00, higher for larger TVL, a known age, a deep sector
+
+    The board separates pre-token protocols (ranked by implied value) from live-token ones (shown at the
+    market's own value, in the Sector multiples panel, never mixed into the ranking). The watchlist is a
+    floor, not a ceiling: the board also ranks the largest pre-token protocols below the floor — the early
+    finds the radar exists to surface. See learnSectors() and value() in the model behind data.js.
+  -->
   <section class="model" aria-label="How the value is computed">
     <h2>How implied value is computed</h2>
     <p class="formula">
@@ -32,8 +50,8 @@
       <span class="x">×</span> <span class="chip">token timing</span>
       <span class="x">×</span> <span class="chip">conviction</span>
     </p>
-    <p id="model-note" class="note"></p>
-    <details class="sectors">
+    <p id="model-note" class="note">The sector multiple is <b>learned from this snapshot's own live-token protocols</b> — the median market-cap ÷ TVL for each category — so a pre-token protocol is valued at what the market already pays for a dollar of TVL in its sector, not a hardcoded guess. Momentum rewards 7-day TVL growth, timing rewards protocols that have run longer with no token, and conviction scales with size and data depth. No protocol is special-cased by name.</p>
+    <details class="sectors" open>
       <summary>Sector multiples, learned from this snapshot's live-token protocols</summary>
       <div id="sector-table" class="sector-grid"></div>
     </details>
